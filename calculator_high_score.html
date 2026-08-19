@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Calculator High Score</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#111827,#1f2937);color:white;min-height:100vh;display:flex;justify-content:center;align-items:center}
+.wrap{width:min(430px,94vw)}.top{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}.stat{background:#273449;border:1px solid #3b4a60;border-radius:14px;padding:10px 16px;flex:1;text-align:center}.label{font-size:12px;color:#9ca3af}.value{font-size:24px;font-weight:bold;margin-top:3px}
+.card{background:#182231;border:1px solid #344256;border-radius:22px;padding:18px;box-shadow:0 20px 50px #0006}.display{background:#0b111b;border-radius:16px;padding:20px;text-align:right;margin-bottom:14px;min-height:105px}.question{font-size:18px;color:#9ca3af;min-height:24px}.answer{font-size:42px;font-weight:bold;word-break:break-all;margin-top:7px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.key{height:64px;border:0;border-radius:14px;background:#2b394d;color:white;font-size:22px;font-weight:bold;cursor:pointer;transition:.12s}.key:hover{background:#394a61;transform:translateY(-1px)}.key:active{transform:scale(.96)}.op{background:#435c7b}.clear{background:#713f46}.equals{background:#34765d}.wide{grid-column:span 2}.message{text-align:center;height:30px;margin-top:13px;font-weight:bold;color:#9ca3af}.start{width:100%;padding:14px;border:0;border-radius:13px;background:#34765d;color:white;font-size:18px;font-weight:bold;cursor:pointer;margin-top:5px}
+@media(max-width:380px){.key{height:58px}.answer{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="stat"><div class="label">SCORE</div><div class="value" id="score">0</div></div>
+    <div class="stat"><div class="label">PERSONAL BEST</div><div class="value" id="best">0</div></div>
+  </div>
+  <div class="card">
+    <div class="display">
+      <div class="question" id="question">Press START to play</div>
+      <div class="answer" id="answer">—</div>
+    </div>
+    <div class="grid">
+      <button class="key clear" onclick="clearAnswer()">C</button><button class="key" onclick="backspace()">⌫</button><button class="key op" onclick="typeKey('/')">÷</button><button class="key op" onclick="typeKey('*')">×</button>
+      <button class="key" onclick="typeKey('7')">7</button><button class="key" onclick="typeKey('8')">8</button><button class="key" onclick="typeKey('9')">9</button><button class="key op" onclick="typeKey('-')">−</button>
+      <button class="key" onclick="typeKey('4')">4</button><button class="key" onclick="typeKey('5')">5</button><button class="key" onclick="typeKey('6')">6</button><button class="key op" onclick="typeKey('+')">+</button>
+      <button class="key" onclick="typeKey('1')">1</button><button class="key" onclick="typeKey('2')">2</button><button class="key" onclick="typeKey('3')">3</button><button class="key equals" onclick="submitAnswer()">=</button>
+      <button class="key wide" onclick="typeKey('0')">0</button><button class="key" onclick="typeKey('.')">.</button>
+      <button class="key" onclick="submitAnswer()">✓</button>
+    </div>
+    <div class="message" id="message"></div>
+    <button class="start" id="start" onclick="startGame()">START GAME</button>
+  </div>
+</div>
+<script>
+let score=0,best=Number(localStorage.getItem("calculatorBest")||0),input="",target=null,playing=false;
+document.getElementById("best").textContent=best;
+function startGame(){score=0;input="";playing=true;document.getElementById("score").textContent=0;document.getElementById("message").textContent="";document.getElementById("start").textContent="NEW GAME";newQuestion()}
+function newQuestion(){
+ let a=Math.floor(Math.random()*90)+10,b=Math.floor(Math.random()*90)+1,ops=["+","−","×"],op=ops[Math.floor(Math.random()*3)];
+ if(op==="+")target=a+b;if(op==="−"){if(b>a)[a,b]=[b,a];target=a-b}if(op==="×"){a=Math.floor(Math.random()*20)+2;b=Math.floor(Math.random()*12)+2;target=a*b}
+ document.getElementById("question").textContent=`${a} ${op} ${b} = ?`;input="";update()
+}
+function typeKey(k){if(!playing)return;if(k==="."&&input.includes("."))return;input+=k;update()}
+function clearAnswer(){if(playing){input="";update()}}
+function backspace(){if(playing){input=input.slice(0,-1);update()}}
+function update(){document.getElementById("answer").textContent=input||"—"}
+function submitAnswer(){
+ if(!playing||input==="")return;
+ if(Number(input)===target){score+=10;document.getElementById("message").textContent="✓ Correct! +10";document.getElementById("score").textContent=score;if(score>best){best=score;localStorage.setItem("calculatorBest",best);document.getElementById("best").textContent=best}setTimeout(newQuestion,350)}
+ else{score=Math.max(0,score-5);document.getElementById("score").textContent=score;document.getElementById("message").textContent="✕ Wrong! -5";setTimeout(newQuestion,600)}
+}
+document.addEventListener("keydown",e=>{if(e.key>="0"&&e.key<="9")typeKey(e.key);else if(["+","-","*","/","."].includes(e.key))typeKey(e.key);else if(e.key==="Enter")submitAnswer();else if(e.key==="Backspace")backspace();else if(e.key==="Escape")clearAnswer()});
+</script>
+</body>
+</html>
