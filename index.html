@@ -1,59 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Calculator High Score</title>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Operators: The Math Bosses</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#111827,#1f2937);color:white;min-height:100vh;display:flex;justify-content:center;align-items:center}
-.wrap{width:min(430px,94vw)}.top{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}.stat{background:#273449;border:1px solid #3b4a60;border-radius:14px;padding:10px 16px;flex:1;text-align:center}.label{font-size:12px;color:#9ca3af}.value{font-size:24px;font-weight:bold;margin-top:3px}
-.card{background:#182231;border:1px solid #344256;border-radius:22px;padding:18px;box-shadow:0 20px 50px #0006}.display{background:#0b111b;border-radius:16px;padding:20px;text-align:right;margin-bottom:14px;min-height:105px}.question{font-size:18px;color:#9ca3af;min-height:24px}.answer{font-size:42px;font-weight:bold;word-break:break-all;margin-top:7px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.key{height:64px;border:0;border-radius:14px;background:#2b394d;color:white;font-size:22px;font-weight:bold;cursor:pointer;transition:.12s}.key:hover{background:#394a61;transform:translateY(-1px)}.key:active{transform:scale(.96)}.op{background:#435c7b}.clear{background:#713f46}.equals{background:#34765d}.wide{grid-column:span 2}.message{text-align:center;height:30px;margin-top:13px;font-weight:bold;color:#9ca3af}.start{width:100%;padding:14px;border:0;border-radius:13px;background:#34765d;color:white;font-size:18px;font-weight:bold;cursor:pointer;margin-top:5px}
-@media(max-width:380px){.key{height:58px}.answer{font-size:34px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="top">
-    <div class="stat"><div class="label">SCORE</div><div class="value" id="score">0</div></div>
-    <div class="stat"><div class="label">PERSONAL BEST</div><div class="value" id="best">0</div></div>
-  </div>
-  <div class="card">
-    <div class="display">
-      <div class="question" id="question">Press START to play</div>
-      <div class="answer" id="answer">—</div>
-    </div>
-    <div class="grid">
-      <button class="key clear" onclick="clearAnswer()">C</button><button class="key" onclick="backspace()">⌫</button><button class="key op" onclick="typeKey('/')">÷</button><button class="key op" onclick="typeKey('*')">×</button>
-      <button class="key" onclick="typeKey('7')">7</button><button class="key" onclick="typeKey('8')">8</button><button class="key" onclick="typeKey('9')">9</button><button class="key op" onclick="typeKey('-')">−</button>
-      <button class="key" onclick="typeKey('4')">4</button><button class="key" onclick="typeKey('5')">5</button><button class="key" onclick="typeKey('6')">6</button><button class="key op" onclick="typeKey('+')">+</button>
-      <button class="key" onclick="typeKey('1')">1</button><button class="key" onclick="typeKey('2')">2</button><button class="key" onclick="typeKey('3')">3</button><button class="key equals" onclick="submitAnswer()">=</button>
-      <button class="key wide" onclick="typeKey('0')">0</button><button class="key" onclick="typeKey('.')">.</button>
-      <button class="key" onclick="submitAnswer()">✓</button>
-    </div>
-    <div class="message" id="message"></div>
-    <button class="start" id="start" onclick="startGame()">START GAME</button>
-  </div>
-</div>
+:root{--bg:#0d0f1a;--fg:#e8ecff;--pn:#171a2e;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Courier New",monospace;user-select:none}
+#screen{width:min(100%,720px);margin:0 auto;position:relative}
+canvas{width:100%;display:block;image-rendering:pixelated;border-bottom:3px solid #333a66}
+#hud{width:min(100%,720px);margin:0 auto;padding:8px 10px;font-size:14px;background:var(--pn)}
+#dpad{display:none;grid-template:repeat(2,48px)/repeat(3,56px);gap:4px;justify-content:center;margin:10px auto}
+#dpad button{font-size:22px;background:#2a3060;color:#fff;border:0;border-radius:8px}
+@media(pointer:coarse){#dpad{display:grid}}
+.hide{display:none!important}
+#bt{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--c) 35%,#05060d),#05060d 70%);padding:7vh 12px 8px;max-width:720px;margin:0 auto}
+.bar{position:fixed;left:0;right:0;height:7vh;background:#000;z-index:11}.bar.t{top:0}.bar.b{bottom:0}
+#stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+#sym{font-size:min(17vh,110px);line-height:1;font-weight:bold;text-shadow:0 0 30px currentColor,0 0 80px currentColor;animation:fl 2.4s ease-in-out infinite}
+@keyframes fl{50%{transform:translateY(-10px) scale(1.04)}}
+.sh{animation:sh .35s}@keyframes sh{25%{transform:translateX(-12px)}75%{transform:translateX(12px)}}
+#bn{margin:4px 0;letter-spacing:2px}
+#ar{flex:none;width:min(100%,340px);aspect-ratio:2/1;border:2px solid #8a93ff;background:#05060dcc;margin:4px auto;display:block;touch-action:none}
+.hp{width:min(80%,420px);height:12px;background:#222;border:2px solid #666;border-radius:6px;overflow:hidden}
+.hp i{display:block;height:100%;width:100%;background:#e24a4a;transition:width .5s}
+#ph{background:#4ae27a}
+#log{min-height:44px;padding:8px;background:var(--pn);border:2px solid #444a80;border-radius:6px;font-size:15px;margin:8px 0 6px}
+#ps{font-size:13px;margin-bottom:5px;text-align:center}
+#menu{display:grid;grid-template-columns:1fr 1fr;gap:6px;min-height:84px;padding-bottom:7vh}
+#menu button{padding:10px;font:inherit;font-size:15px;background:#2a3060;color:#fff;border:2px solid #5b64b0;border-radius:6px;cursor:pointer}
+#menu button:hover{background:#3b4488}
+#pz,#rm{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:40;width:min(92%,420px);background:#06081af2;border:2px solid #4de;border-radius:10px;padding:16px;text-align:center}#pz p{margin:0 0 12px;line-height:1.4;white-space:pre-line}#po{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}#po button{padding:10px 16px;font:inherit;font-size:16px;background:#2a3060;color:#fff;border:2px solid #4de;border-radius:6px;cursor:pointer}
+#rm{z-index:50;border-color:#f66}#rm p{margin:0 0 10px}#rm input{font:inherit;font-size:18px;padding:8px;width:80%;text-align:center;margin-bottom:10px;background:#111;color:#fff;border:2px solid #f66;border-radius:6px}#rm button{padding:8px 16px;font:inherit;background:#2a3060;color:#fff;border:2px solid #f66;border-radius:6px;margin:0 4px;cursor:pointer}
+#fl{position:fixed;inset:0;background:#f33;opacity:0;pointer-events:none;z-index:12;transition:opacity .4s}
+#dlg{position:fixed;left:0;right:0;bottom:calc(7vh + 6px);z-index:30;max-width:700px;margin:0 auto;padding:14px 16px;background:#06081aee;border:2px solid #8a93ff;border-radius:8px;min-height:96px;cursor:pointer}
+#dlg b{display:block;margin-bottom:6px;letter-spacing:2px}#dlg p{margin:0;font-size:16px;line-height:1.4}
+#dlg small{position:absolute;right:10px;bottom:4px;opacity:.6;animation:fl 1s infinite}
+</style></head><body>
+<div id="screen"><canvas id="c" width="480" height="320"></canvas></div>
+<div id="hud"></div>
+<div style="text-align:center;padding:6px"><button id="rs" style="font:inherit;font-size:12px;padding:4px 10px;background:#2a3060;color:#fff;border:1px solid #5b64b0;border-radius:6px">Reset save</button></div><div id="dpad"><span></span><button data-d="0,-1">▲</button><span></span><button data-d="-1,0">◀</button><button data-d="0,1">▼</button><button data-d="1,0">▶</button></div>
+<div id="bt" class="hide"><div class="bar t"></div><div class="bar b"></div>
+<div id="stage"><div id="sym"></div><div id="bn"></div><div class="hp"><i id="bh"></i></div></div>
+<canvas id="ar" width="320" height="160"></canvas><div id="log"></div><div id="ps"></div><div class="hp" style="margin:0 auto 6px"><i id="ph"></i></div><div id="menu"></div><div id="fl"></div></div>
+<div id="rm" class="hide"><p id="rw"></p><input id="ri" autocomplete="off" autocapitalize="characters"><div><button id="rd">Delete</button><button id="rc">Cancel</button></div></div><div id="pz" class="hide"><p id="pq"></p><div id="po"></div></div><div id="dlg" class="hide"><b id="who"></b><p id="txt"></p><small>▼</small></div>
 <script>
-let score=0,best=Number(localStorage.getItem("calculatorBest")||0),input="",target=null,playing=false;
-document.getElementById("best").textContent=best;
-function startGame(){score=0;input="";playing=true;document.getElementById("score").textContent=0;document.getElementById("message").textContent="";document.getElementById("start").textContent="NEW GAME";newQuestion()}
-function newQuestion(){
- let a=Math.floor(Math.random()*90)+10,b=Math.floor(Math.random()*90)+1,ops=["+","−","×"],op=ops[Math.floor(Math.random()*3)];
- if(op==="+")target=a+b;if(op==="−"){if(b>a)[a,b]=[b,a];target=a-b}if(op==="×"){a=Math.floor(Math.random()*20)+2;b=Math.floor(Math.random()*12)+2;target=a*b}
- document.getElementById("question").textContent=`${a} ${op} ${b} = ?`;input="";update()
+const $=i=>document.getElementById(i),sl=ms=>new Promise(r=>setTimeout(r,ms)),R=Math.random;
+const T=32,VW=15,VH=10,W=74,H=26,ctx=$("c").getContext("2d");
+let P={hp:90,mhp:90,mp:30,mmp:30,atk:10,def:0,lv:1,xp:0,mod:0,g:0,it:{Potion:4,Ether:2,Elixir:0}};
+let px=3,py=4,face=[1,0],busy=true,held=null,last=0;const done=[0,0,0,0,0,0,0],BS=[],solved=[0,0,0,0,0,0,0];let cp=[3,4];
+// ---- map: winding path with grass flanks ----
+const M=Array.from({length:H},()=>Array(W).fill("#"));
+const pts=[[2,4],[24,4],[24,20],[48,20],[48,4],[70,4],[70,20],[52,20]];
+const Z=Array.from({length:H},()=>Array(W).fill(0));let curZ=0,bt=performance.now();
+const ZN=["Additive Meadow","Subtractor Caverns","Times Tower","Divide Ruins","The Inequality Gate","Radical Roots","Sigma Summit"];
+const ZC=[{g:"#2f7a3c",b:"#4fb35a",d:"#bf9b62",e:"#a98652"},{g:"#4a3f6e",b:"#7a6aa8",d:"#8a8fa8",e:"#6e7390"},{g:"#7a6a2c",b:"#b8a04a",d:"#d9bf62",e:"#b89c40"},{g:"#7a3c3c",b:"#b05a5a",d:"#a88a8a",e:"#8a6e6e"},{g:"#2c6a7a",b:"#4aa8bd",d:"#9ac8d4",e:"#78a8b8"},{g:"#3a5a2a",b:"#5a8a3a",d:"#6b4a2a",e:"#523818"},{g:"#6a2c7a",b:"#a84abd",d:"#d4a8e0",e:"#b080c0"}];
+function carve(ch){for(let k=0;k<pts.length-1;k++){let[a,b]=pts[k],[c,d]=pts[k+1],x=a,y=b;for(;;){for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){let X=x+i,Y=y+j;Z[Y][X]=k;if(ch=="."?(!i&&!j):M[Y][X]=="#")M[Y][X]=ch}
+if(x==c&&y==d)break;if(x!=c)x+=Math.sign(c-x);else y+=Math.sign(d-y)}}}
+carve("g");carve(".");
+const BP=[[21,4,0,1],[24,17,1,0],[45,20,0,1],[48,7,1,0],[67,4,0,1],[70,17,1,0],[55,20,0,1]];
+const setB=(i,ch)=>{let[x,y,dx,dy]=BP[i];for(let k=-1;k<=1;k++)M[y+k*dy][x+k*dx]=ch};
+BP.forEach((_,i)=>setB(i,String(i+1)));
+const PG=[[14,4,0,1],[24,12,1,0],[34,20,0,1],[48,13,1,0],[58,4,0,1],[70,12,1,0],[62,20,0,1]];const setG=(i,ch)=>{let[x,y,dx,dy]=PG[i];for(let k=-1;k<=1;k++)M[y+k*dy][x+k*dx]=ch};PG.forEach((_,i)=>setG(i,String.fromCharCode(112+i)));
+[[3,4],[18,4],[24,7],[24,14],[27,20],[41,20],[48,17],[48,10],[51,4],[63,4],[70,7],[70,14],[67,20],[58,20]].forEach(([x,y])=>M[y][x]="H");
+// ---- bosses ----
+const BO=[
+{name:"PLUS, THE SUM SOVEREIGN",sym:"+",col:"#5ec8ff",mhp:100,atk:12,dm:1,xp:90,big:"TOTAL SUM",mv:"Addition",pats:["rain","sweep"],
+ intro:["Another traveler seeks the Operators? How… additive.","I am PLUS. Every number begins with me, and every journey ends in my sum.","Come then, little counter. Let us see if you add up!"],
+ ph:["You are stronger than you look… but every blow only adds to my power. ADD-ON!","One more! Stand against the TOTAL!"],
+ win:["Impossible… I was only ever one plus one…","Take what I gathered. But beware — my brother, MINUS, takes away everything."],
+ lose:["Your total is zero. Rest, and count again."],
+ sp:async(f,h)=>{f.atk+=1.2;await log("ADD-ON! Plus grows stronger.");await h(.8,"The sum strikes!")},
+ rew:{it:{Potion:3},gear:["Pencil Sword",4,0]}},
+{name:"MINUS, THE SUBTRACTOR",sym:"−",col:"#ff6b8a",mhp:170,atk:19,dm:1.6,xp:140,big:"ZERO OUT",mv:"Subtraction",pats:["rain","sweep","aimed","wall","spiral"],
+ intro:["You took my brother’s sum… so I will take everything from you.","I am MINUS. Where I walk, things are left… missing.","Your strength. Your hope. Your health. Subtract. Subtract. SUBTRACT!"],
+ ph:["Feel that? Your power is draining away. Do you feel… lighter?","Take away my health and I take away your last hope!"],
+ win:["I… am being… subtracted…","Fine. Keep it. But TIMES will multiply every fear you have."],
+ lose:["Nothing left. Not even you."],
+ sp:async(f,h)=>{P.mod=Math.max(-10,P.mod-3);P.mp=Math.max(0,P.mp-10);upd();await log("SUBTRACT! Your attack −3 and MP −10.");await h(1,"The difference cuts!")},
+ rew:{it:{Ether:3,Potion:2},gear:["Eraser Shield",0,3]}},
+{name:"TIMES, THE MULTIPLIER",sym:"×",col:"#ffc94a",mhp:340,atk:21,dm:1.9,xp:220,big:"INFINITE PRODUCT",mv:"Multiplication",pats:["rain","sweep","aimed","wall","spiral","cross"],
+ intro:["Plus gathers. Minus loses. I am TIMES — I MULTIPLY.","One of me becomes two. Two becomes four. You cannot count fast enough.","This is the end of simple arithmetic. Welcome to the product of all your fears!"],
+ ph:["DOUBLE! TRIPLE! My strength multiplies with every second!","Infinity is just a number I haven’t reached yet!"],
+ win:["Zero… times anything… is zero… and yet you stand…","The Operators fall silent. But ÷ stirs beyond the horizon…"],
+ lose:["Multiply your failures by infinity."],
+ sp:async(f,h)=>{await h(.8,"DOUBLE STRIKE! Two patterns at once!",2)},
+ rew:{it:{Elixir:2,Potion:3},gear:["Golden Ruler",6,2]}},
+{name:"DIVIDE, THE SUNDERER",sym:"÷",col:"#b07cff",mhp:420,atk:24,dm:2.2,xp:320,big:"REMAINDER",mv:"Division",pats:["rain","sweep","aimed","wall","spiral","cross","burst"],
+ intro:["Three of my siblings, undone by a mere counter? Remarkable.","I am DIVIDE. I split everything — armies, hopes, whole numbers — into pieces.","Plus builds, Minus erodes, Times swells. I am the one who breaks it all apart!"],
+ ph:["Every wound you give me only splits me further — and you with me!","There is always a remainder… and you are it!"],
+ win:["Divided… by zero… the one thing I always feared…","You have mastered all four Operators. But two who are never equal still watch you from ahead…"],
+ lose:["Divided by zero. Rest, and return in pieces."],
+ sp:async(f,h)=>{const c=Math.ceil(P.hp*.25);P.hp=Math.max(1,P.hp-c);hurt();upd(f);await log(`DIVIDE! Your HP is cut by a quarter (-${c}).`);await h(1,"The quotient crashes down!")},
+ rew:{it:{Elixir:3,Potion:4,Ether:3},gear:["Fraction Blade",5,4]}},
+{name:"LESS & GREATER, THE TWINS",sym:"< >",col:"#3fe0c0",mhp:480,atk:26,dm:1.6,tw:1,th:[.55,.25],xp:450,big:"THE INEQUALITY",mv:"Comparison",pats:["rain","sweep","aimed","wall","spiral","cross","burst","pincer"],
+ onph:(f,i)=>{if(i==0){f.sym="> <";f.dm+=.3;f.atk+=2;f.pats=[...f.pats,"flip"]}},
+ intro:["Hmm. Four Operators have fallen to one little Counter. How impressive.","LESS: We watched the whole journey from the Inequality Gate, brother.","GREATER: We are LESS and GREATER — twins, rivals, and never quite equal.","LESS: We are impressed, Counter. That is why we will not hold back.","GREATER: We fight together. Let us see if you can handle both sides of the sign!"],
+ ph:["LESS: Brother — TURN AROUND! GREATER: Turn around! Now I am greater, and you are less… and we are twice as angry!","GREATER: One of us must be bigger! LESS: Then let us be EQUAL… in fury!"],
+ win:["LESS: Greater… than me… and yet we both fell…","GREATER: Equal, at last. Go on, Counter. You are greater than all of us."],
+ lose:["LESS: Not enough.","GREATER: Come back when you are greater."],
+ sp:async(f,h)=>{await h(1.1,"The twins strike from both sides!",3)},
+ rew:{it:{Elixir:4,Potion:4,Ether:4},gear:["Inequality Crown",6,5]}},
+{name:"ROOT, THE RADICAL",sym:"√",col:"#7cff8a",mhp:560,atk:28,dm:1.5,sq:1,xp:600,big:"PERFECT SQUARE",mv:"Extraction",pats:["rain","sweep","aimed","wall","spiral","cross","burst","pincer","flip"],
+ intro:["Counting… counting… ah. A visitor in my roots.","I am ROOT, the Radical. I dig beneath every number to find what it truly is.","Each turn I choose a number from four to nine and take its root. The deeper the root, the more it hurts!","Let us see what you are made of, Counter. Besides squares."],
+ ph:["The root of the problem… is YOU. Let me dig deeper!","I have found your perfect square — and it is NOT in your favor!"],
+ win:["I am only a root… and yet I have been uprooted…","Take it, Counter. You have earned every root and every square."],
+ lose:["Not a perfect square. Try again."],
+ sp:async(f,h)=>{P.mp=Math.floor(Math.sqrt(P.mp));upd(f);await log("ROOT EXTRACTION! Your MP becomes its square root.");await h(1,"The radical bears down!")},
+ rew:{it:{Elixir:5,Potion:5,Ether:5},gear:["Radical Staff",7,5]}},
+{name:"SIGMA, THE SUMMATION",sym:"∑",col:"#e08cff",mhp:420,atk:22,dm:1,sig:1,xp:800,big:"INFINITE SERIES",mv:"Summation",pats:["rain","sweep","aimed","wall","spiral","cross","burst"],
+ intro:["Oh… another small sum wanders into my tower.","I am SIGMA, the Summation. I am every number you have ever beaten, added together.","You cannot simply strike me. To wound a sum, you must first prove you understand it.","Answer my questions, Counter — or your blows will count for nothing!"],
+ ph:["Every answer you give only adds to my collection!","The series never ends… and neither does my power!"],
+ win:["The sum… is complete… and I am only the remainder…","Well added, Counter. You have summed up every Operator."],
+ lose:["Your total is zero. Add yourself up again."],
+ sp:async(f,h)=>{f.atk+=1.5;await log("ALL SUMMED! Sigma adds to its own power.");await h(.9,"The series converges on you!")},
+ rew:{it:{Elixir:6,Potion:6,Ether:6},gear:["Sigma Blade",8,6]}}];
+// ---- dialogue ----
+let cur=null;
+function say(w,t,col){return new Promise(res=>{const d=$("dlg"),x=$("txt");d.classList.remove("hide");$("who").textContent=w;$("who").style.color=col||"#8a93ff";x.textContent="";let i=0;
+const iv=setInterval(()=>{x.textContent=t.slice(0,++i);if(i>=t.length){clearInterval(iv);cur.typing=0}},24);cur={iv,t,res,typing:1}})}
+function adv(){if(!cur)return;if(cur.typing){clearInterval(cur.iv);$("txt").textContent=cur.t;cur.typing=0}else{const r=cur.res;cur=null;r()}}
+async function talk(lines,w,c){for(const l of lines)await say(w,l,c);$("dlg").classList.add("hide")}
+$("dlg").onclick=adv;
+// ---- helpers ----
+const log=t=>{$("log").textContent=t;return sl(1000)};
+function upd(f){if(f)$("bh").style.width=Math.max(0,f.hp/f.mhp*100)+"%";$("ph").style.width=P.hp/P.mhp*100+"%";
+$("ps").textContent=`Lv ${P.lv}   HP ${P.hp}/${P.mhp}   MP ${P.mp}/${P.mmp}`+(P.mod?`   ATK ${P.mod}`:"");hud()}
+function hud(){$("hud").textContent=`Lv ${P.lv} · HP ${P.hp}/${P.mhp} · MP ${P.mp}/${P.mmp} · ATK ${P.atk} · DEF ${P.def} · Potion ${P.it.Potion} · Ether ${P.it.Ether} · Elixir ${P.it.Elixir} · Operators ${done.filter(x=>x).length}/7`}
+function pick(o){return new Promise(r=>{const m=$("menu");m.innerHTML="";o.forEach((t,i)=>{const b=document.createElement("button");b.textContent=t;b.onclick=()=>{m.innerHTML="";r(i)};m.append(b)})})}
+const shake=()=>{const s=$("stage");s.classList.remove("sh");void s.offsetWidth;s.classList.add("sh")};
+const hurt=()=>{$("fl").style.opacity=.5;setTimeout(()=>$("fl").style.opacity=0,200)};
+// ---- battle ----
+async function battle(f){
+ busy=true;P.mod=0;P.g=0;f.turn=0;f.pi=f.pi||0;f.chg=0;
+ $("bt").style.setProperty("--c",f.col);$("bt").classList.remove("hide");A.x=160;A.y=120;A.bl=[];A.on=0;inBt=1;AT=performance.now();requestAnimationFrame(aloop);
+ $("sym").textContent=f.sym;$("sym").style.color=f.col;$("bn").textContent=f.name;$("bh").style.width="100%";upd(f);$("log").textContent="";
+ await sl(700);if(f.b!=null&&!f.seen){f.seen=1;await talk(f.intro,f.name,f.col)}
+ for(;;){
+  for(let acted=0;!acted;){
+   upd(f);const c=await pick(f.b==null?["⚔ Attack","✦ Skills","🎒 Items","🛡 Guard","🏃 Run"]:["⚔ Attack","✦ Skills","🎒 Items","🛡 Guard"]);
+   if(c==0){await atk(f,1,"Attack");acted=1}
+   else if(c==1){const S=[["Calculate",8,2.2],["Solve",16,3.4],["Balance",10,0]];
+    const s=await pick(S.map(s=>`${s[0]} (${s[1]} MP)`).concat("← Back"));if(s>2)continue;
+    if(P.mp<S[s][1]){await log("Not enough MP!");continue}P.mp-=S[s][1];
+    if(s==2){P.hp=Math.min(P.mhp,P.hp+40);upd(f);await log("BALANCE! Both sides equal. You recover 40 HP.")}else await atk(f,S[s][2],S[s][0]);acted=1}
+   else if(c==2){const n=Object.keys(P.it).filter(k=>P.it[k]>0);if(!n.length){await log("No items left!");continue}
+    const i=await pick(n.map(k=>`${k} ×${P.it[k]}`).concat("← Back"));if(i>=n.length)continue;
+    const k=n[i];P.it[k]--;if(k=="Potion")P.hp=Math.min(P.mhp,P.hp+50);else if(k=="Ether")P.mp=Math.min(P.mmp,P.mp+20);else{P.hp=P.mhp;P.mp=P.mmp}
+    upd(f);await log(`You use ${k}.`);acted=1}
+   else if(c==3){P.g=1;P.mp=Math.min(P.mmp,P.mp+6);upd(f);await log("You brace yourself. Damage halved this turn. +6 MP.");acted=1}
+   else if(c==4){if(R()<.55){await log("You slipped away!");return end("run")}await log("Couldn’t get away!");acted=1}
+  }
+  if(f.hp<=0)break;
+  if(f.b!=null&&f.pi<2&&f.hp/f.mhp<(f.th||[.66,.33])[f.pi]){await talk([f.ph[f.pi]],f.name,f.col);f.atk+=2.5;f.onph&&f.onph(f,f.pi);f.pi++;$("sym").textContent=f.sym;shake()}
+  await foe(f);P.g=0;upd(f);if(P.hp<=0)break;
+ }
+ if(f.hp<=0){
+  if(f.b!=null){await talk(f.win,f.name,f.col)}
+  await log(`${f.name} is defeated!`);
+  let msg=`+${f.xp} XP.`;P.xp+=f.xp;
+  if(f.b!=null){for(const k in f.rew.it){P.it[k]+=f.rew.it[k];msg+=` ${k} ×${f.rew.it[k]}.`}
+   const g=f.rew.gear;P.atk+=g[1];P.def+=g[2];msg+=` Obtained ${g[0]}!`+(g[1]?` ATK +${g[1]}`:"")+(g[2]?` DEF +${g[2]}`:"")}
+  else if(R()<.4){P.it.Potion++;msg+=" Found a Potion."}
+  await log(msg);
+  while(P.xp>=P.lv*40){P.xp-=P.lv*40;P.lv++;P.mhp+=12;P.mmp+=4;P.atk+=2;P.hp=P.mhp;P.mp=P.mmp;upd(f);await log(`LEVEL UP! You are now level ${P.lv}.`)}
+  return end("win")}
+ await talk(f.lose||["…"],f.name,f.col);return end("lose");
 }
-function typeKey(k){if(!playing)return;if(k==="."&&input.includes("."))return;input+=k;update()}
-function clearAnswer(){if(playing){input="";update()}}
-function backspace(){if(playing){input=input.slice(0,-1);update()}}
-function update(){document.getElementById("answer").textContent=input||"—"}
-function submitAnswer(){
- if(!playing||input==="")return;
- if(Number(input)===target){score+=10;document.getElementById("message").textContent="✓ Correct! +10";document.getElementById("score").textContent=score;if(score>best){best=score;localStorage.setItem("calculatorBest",best);document.getElementById("best").textContent=best}setTimeout(newQuestion,350)}
- else{score=Math.max(0,score-5);document.getElementById("score").textContent=score;document.getElementById("message").textContent="✕ Wrong! -5";setTimeout(newQuestion,600)}
+function end(r){inBt=0;$("bt").classList.add("hide");P.mod=0;P.g=0;hud();return r}
+// ---- dodge arena ----
+const AC=$("ar").getContext("2d"),K={},A={x:160,y:120,bl:[],tm:{},on:0,t:0,inv:0};let inBt=0,AT=0,DT=0;
+const bul=(x,y,vx,vy,r)=>A.bl.push({x,y,vx:vx*(A.sp||1),vy:vy*(A.sp||1),r:r||7,k:A.bl.length});
+const aim=(x,y,s)=>{const a=Math.atan2(A.y-4-y,A.x-x);bul(x,y,Math.cos(a)*s,Math.sin(a)*s,7)};
+function ev(k,iv,fn){A.tm[k]=(A.tm[k]||0)+DT;if(A.tm[k]>=iv){A.tm[k]=0;fn()}}
+const PAT={
+ rain:m=>ev("a",.3/m,()=>bul(R()*320,-8,0,90+R()*50,7)),
+ sweep:m=>ev("b",.55/m,()=>{const l=R()<.5;bul(l?-8:328,10+R()*140,l?130:-130,0,9)}),
+ aimed:m=>ev("c",.7/m,()=>aim(160,-6,120+30*m)),
+ wall:m=>ev("d",1.5/m,()=>{const gap=30+R()*260;for(let x=8;x<320;x+=18)if(Math.abs(x-gap)>34)bul(x,-8,0,75,7)}),
+ spiral:m=>ev("e",.09/m,()=>{const a=A.t*3;bul(160,-4,Math.cos(a)*60,Math.abs(Math.sin(a))*70+30,6)}),
+ cross:m=>ev("f",1/m,()=>{aim(-6,-6,110);aim(326,-6,110);aim(-6,166,110);aim(326,166,110)}),
+ burst:m=>ev("g",1.3/m,()=>{const cx=40+R()*240,cy=20+R()*50;for(let k=0;k<10;k++){const a=k*.628;bul(cx,cy,Math.cos(a)*75,Math.sin(a)*75,6)}}),
+ pincer:m=>ev("h",.8/m,()=>{const y=30+R()*100;bul(-6,y,140,0,8);bul(326,160-y,-140,0,8)}),
+ flip:m=>ev("i",.5/m,()=>A.bl.push({x:R()*320,y:-8,vx:0,vy:100*(A.sp||1),r:7,k:A.bl.length,fl:1}))};
+$("ar").onpointermove=e=>{if(!A.on)return;const r=$("ar").getBoundingClientRect();A.x=Math.max(10,Math.min(310,(e.clientX-r.left)/r.width*320));A.y=Math.max(14,Math.min(150,(e.clientY-r.top)/r.height*160))};
+function aloop(t){if(!inBt)return;const dt=Math.min(.05,(t-AT)/1000||0);AT=t;DT=dt;const g=AC;g.clearRect(0,0,320,160);
+ if(A.on){A.t+=dt;const dx=(K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0)+(held?held[0]:0),dy=(K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0)+(held?held[1]:0);
+  A.x=Math.max(10,Math.min(310,A.x+Math.sign(dx)*150*dt));A.y=Math.max(14,Math.min(150,A.y+Math.sign(dy)*150*dt));
+  A.names.forEach(n=>PAT[n](A.m));A.inv-=dt;
+  for(const b of A.bl){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.fl&&b.y>80){b.vy*=-1;b.fl=0}
+   if(A.inv<=0&&Math.hypot(b.x-A.x,b.y-(A.y-4))<b.r+5){let d=Math.max(1,Math.round(A.f.atk*A.pw*.55*(.85+R()*.3))-P.def);if(P.g)d=Math.ceil(d/2);P.hp=Math.max(0,P.hp-d);A.inv=.9;A.hit=1;hurt();upd(A.f)}}
+  A.bl=A.bl.filter(b=>b.x>-20&&b.x<340&&b.y>-20&&b.y<180);
+  if(A.t>=A.dur||P.hp<=0){A.on=0;A.bl=[];A.done&&A.done()}}
+ g.textAlign="center";g.fillStyle=A.f?A.f.col:"#fff";for(const b of A.bl){g.font=`bold ${b.r*2+8}px monospace`;g.shadowColor=g.fillStyle;g.shadowBlur=8;{const s=A.f.sym.replace(/ /g,"");g.fillText(s[b.k%s.length],b.x,b.y+b.r)}}g.shadowBlur=0;
+ if(!(A.inv>0&&Math.floor(t/80)%2)){const X=A.x-10,Y=A.y-16+(A.on?0:Math.sin(t/300)*1.5);g.fillStyle="#3d6fd1";g.fillRect(X+3,Y+12,14,12);g.fillStyle="#f2cfa5";g.fillRect(X+3,Y+2,14,11);g.fillStyle="#5a3a1e";g.fillRect(X+2,Y,16,5);g.fillStyle="#222";g.fillRect(X+6,Y+7,2,2);g.fillRect(X+12,Y+7,2,2);g.fillStyle="#ffd34d";g.fillRect(X+18,Y+11,3,12)}
+ requestAnimationFrame(aloop)}
+async function dodge(f,pw,names,m){A.f=f;A.pw=pw;A.names=names;A.m=m;A.bl=[];A.tm={};A.t=0;A.inv=0;A.hit=0;A.dur=pw>2?7:5;A.sp=f.dm?1+(f.dm-1)*.5:1;A.x=160;A.y=120;
+ $("log").textContent="DODGE! Arrows / WASD, or drag inside the box.";
+ await new Promise(r=>{A.done=r;A.on=1});
+ if(!A.hit&&P.hp>0){P.mp=Math.min(P.mmp,P.mp+3);upd(f);await log("Perfect dodge! +3 MP.")}}
+async function atk(f,m,n){if(f.sig&&!(await bq(f))){await log("Wrong answer — your attack fizzles!");return}let d=Math.round((P.atk+P.mod)*m*(.85+R()*.3)),c=R()<.1;if(c)d=Math.round(d*1.5);d=Math.max(1,d);f.hp-=d;shake();upd(f);await log(`${n}! ${d} damage${c?" — CRITICAL!":""}`)}
+async function foe(f){f.turn++;
+ const h=async(pw,t,n=1)=>{await log(t);let q=1;if(f.sq){f.N=4+(R()*6|0);await log(`√ picks ${f.N}!  √${f.N} ≈ ${Math.sqrt(f.N).toFixed(1)}`);n=Math.round(Math.sqrt(f.N));q=Math.sqrt(f.N)/2}const pool=f.pats||["rain"],pk=[...pool].sort(()=>R()-.5).slice(0,f.tw?Math.max(n,2+(f.pi>0?1:0)):n);await dodge(f,pw,pk,(pw>2?1.7:1)*(f.dm||1)*q)};
+ if(f.chg){f.chg=0;await h(2.4,`${f.name.split(",")[0]} unleashes ${f.big}!`);return}
+ if(f.b==null){await h(1,`${f.name} attacks!`);return}
+ const r=R();
+ if(f.turn>1&&r<.2){f.chg=1;await log(`${f.sym} gathers terrible power: ${f.big}! GUARD NOW!`);return}
+ if(r<.5)await f.sp(f,h);else await h(1,`${f.mv} strikes!`);
 }
-document.addEventListener("keydown",e=>{if(e.key>="0"&&e.key<="9")typeKey(e.key);else if(["+","-","*","/","."].includes(e.key))typeKey(e.key);else if(e.key==="Enter")submitAnswer();else if(e.key==="Backspace")backspace();else if(e.key==="Escape")clearAnswer()});
-</script>
-</body>
-</html>
+// ---- world events ----
+async function wild(d){const n=done.filter(x=>x).length;
+ const f={name:`Rogue ${d}`,sym:String(d),col:"#9ad0ff",mhp:24+n*22+(R()*10|0),atk:6+n*3,xp:14+n*8,b:null};f.hp=f.mhp;
+ const r=await battle(f);if(r=="lose")await respawn();EN.length=0;save();busy=false}
+async function respawn(){px=cp[0];py=cp[1];EN.length=0;P.hp=P.mhp;P.mp=P.mmp;hud();await talk(["The numbers rewrite you. You awaken at the Rest Stone, whole again."],"Narrator")}
+async function boss(i){busy=true;const B=BO[i];
+ const cut=["A cold silence falls over the path…","The air bends. Something ancient stands in your way.","?"];
+ await talk([i==0?"The fog ahead pulses with a strange glow…":i==1?"The path ahead drains of color…":i==2?"The ground trembles. Everything starts to double…":i==3?"The air splits in two. Something sharp cuts across the path…":i==4?"Two shadows lean toward each other across the path, one pointing left, one pointing right…":i==5?"The roots writhe. A hooked shape rises from the earth, counting…":i==6?"Numbers stack higher and higher, forming a gleaming tower of added sums…":"Everything starts to double…"],"Narrator");
+ const f=BS[i]||(BS[i]={...B,hp:B.mhp,b:i});const r=await battle(f);
+ if(r=="win"){done[i]=1;setB(i,".");hud();save();
+  if(i==2)await talk(["Three Operators lie silent, but the path keeps going. Far ahead, a bar between two dots begins to glow…"],"Narrator");if(i==3)await talk(["Division falls. Four Operators lie silent, yet the path keeps winding on, and two figures wait beyond it, watching you…"],"Narrator");if(i==4)await talk(["Less and Greater stand side by side at last — equal, and smiling.","Deep in the roots ahead, something ancient begins to count…"],"Narrator");if(i==5)await talk(["The Radical falls. Far ahead, a golden tower of stacked sums gleams against the sky…"],"Narrator");if(i==6)await talk(["Sigma collapses into a single glowing number. The sum is complete.","You have mastered the Operators, the Inequalities, the Roots and the Sums.","Perhaps π and ∞ wait beyond the horizon…","TO BE CONTINUED…"],"Narrator");busy=false}
+ else{BS[i]={...B,hp:B.mhp,b:i,seen:1};await respawn();busy=false}save()}
+const RI=(a,b)=>a+(R()*(b-a+1)|0);
+const PZ0=[
+()=>{const a=RI(12,40),b=RI(12,40),s=a+b;return[`The Gate of Sums hums. What is ${a} + ${b}?`,s,[s+10,s-1]]},
+()=>{const s=RI(25,45),d=RI(3,6),n=s-4*d;return[`The Gate of Loss shows a fading pattern: ${s}, ${s-d}, ${s-2*d}, ${s-3*d}, … what comes next?`,n,[n+2,n-d]]},
+()=>{const a=RI(4,9),b=RI(6,12),p=a*b;return[`The Gate of Products asks: what is ${a} × ${b}?`,p,[p+a,p-b]]},
+()=>{const d=RI(3,8),q=RI(5,9),r=RI(1,d-1),n=q*d+r;return[`The Gate of Division asks: ${n} ÷ ${d} equals how many whole groups, and what remains?`,`${q} R ${r}`,[`${q-1} R ${r}`,`${q} R ${r+1}`]]},
+()=>{let a=RI(10,99),b=RI(10,99);if(a==b)b++;return[`The Twin Gate asks: which sign fits? ${a} ? ${b}`,a<b?"<":">",[a<b?">":"<","="]]},
+()=>{const n=RI(4,12);return[`The Root Gate asks: what is √${n*n}?`,n,[n+1,n-1]]}];
+function askpz(q,o){return new Promise(r=>{$("pq").textContent=q;const b=$("po");b.innerHTML="";o.forEach((t,i)=>{const e=document.createElement("button");e.textContent=t;e.onclick=()=>{$("pz").classList.add("hide");r(i)};b.append(e)});$("pz").classList.remove("hide")})}
+async function puzzle(i){busy=true;const[q,a,w]=PZ[i](),o=[a,...w].map(String).sort(()=>R()-.5);
+ await talk(["A glowing gate blocks the path. Only the right answer opens it."],"Gate","#4de");
+ for(;;){const k=await askpz(q,o);if(o[k]==String(a))break;P.hp=Math.max(1,P.hp-Math.ceil(P.mhp*.08));hurt();hud();await talk(["WRONG! The gate shocks you. Think again."],"Gate","#f66")}
+ solved[i]=1;setG(i,".");await talk(["The gate dissolves. The path is open!"],"Gate","#4de");save();busy=false}
+let QR=null;const GQ=[1,1,1,2,5,4,3];
+const opts=(a,mk,n)=>{const s=new Set([String(a)]);let g=0;while(s.size<n&&g++<300)s.add(String(mk()));return[...s].sort(()=>R()-.5)};
+const nm=(a,r)=>()=>Math.abs(a+RI(-r,r));
+const PZ=[
+n=>{const a=RI(12,40),b=RI(12,40),s=a+b;return[`The Gate of Sums hums. What is ${a} + ${b}?`,String(s),opts(s,nm(s,12),n)]},
+n=>{const s=RI(25,45),d=RI(3,6),a=s-4*d;return[`The Gate of Loss shows a fading pattern: ${s}, ${s-d}, ${s-2*d}, ${s-3*d}, … what comes next?`,String(a),opts(a,nm(a,8),n)]},
+n=>{const a=RI(4,9),b=RI(6,12),p=a*b;return[`The Gate of Products asks: what is ${a} × ${b}?`,String(p),opts(p,nm(p,15),n)]},
+n=>{const d=RI(3,8),q=RI(5,9),r=RI(1,d-1),a=`${q} R ${r}`;return[`The Gate of Division asks: ${q*d+r} ÷ ${d} equals how many whole groups, and what remains?`,a,opts(a,()=>`${q+RI(-3,3)} R ${RI(0,d-1)}`,n)]},
+n=>{const T=()=>{let a=RI(10,99),b=RI(10,99);if(a==b)b++;return[Math.min(a,b),Math.max(a,b)]};let[a,b]=T();const O=[`${a} < ${b}`];while(O.length<n){[a,b]=T();const s=`${a} > ${b}`;if(!O.includes(s))O.push(s)}return["The Twin Gate asks: which statement is TRUE?",O[0],O.sort(()=>R()-.5)]},
+n=>{const k=RI(4,12);return[`The Root Gate asks: what is √${k*k}?`,String(k),opts(k,nm(k,6),n)]},
+n=>{const k=RI(4,10),s=k*(k+1)/2;return[`The Sum Gate asks: what is 1 + 2 + 3 + … + ${k}?`,String(s),opts(s,nm(s,12),n)]}];
+function askpz(q,o){return new Promise(r=>{QR=r;$("pq").textContent=q;const b=$("po");b.innerHTML="";o.forEach((t,i)=>{const e=document.createElement("button");e.textContent=t;e.onclick=()=>{QR=null;$("pz").classList.add("hide");r(i)};b.append(e)});$("pz").classList.remove("hide")})}
+async function puzzle(i){busy=true;const N=GQ[i];
+ await talk([`A glowing gate blocks the path. Solve ${N>1?N+" questions":"its question"} to open it${N>1?" — each one offers more answers":""}.`],"Gate","#4de");
+ for(let k=0;k<N;k++){const[q,a,o]=PZ[i](3+k);for(;;){const j=await askpz((N>1?`(${k+1}/${N}) `:"")+q,o);if(o[j]==a)break;P.hp=Math.max(1,P.hp-Math.ceil(P.mhp*.08));hurt();hud();await talk(["WRONG! The gate shocks you. Think again."],"Gate","#f66")}}
+ solved[i]=1;setG(i,".");await talk(["The gate dissolves. The path is open!"],"Gate","#4de");save();busy=false}
+async function bq(f){f.qn=(f.qn||0)+1;const[q,a,o]=PZ[6](Math.min(2+f.qn,8));
+ Object.assign(A,{f,pw:.8,names:["rain","sweep","aimed"],m:.6,bl:[],tm:{},t:0,inv:0,hit:0,dur:999,sp:.4,x:160,y:120,on:1});
+ A.done=()=>{if(QR){$("pz").classList.add("hide");QR(-1)}};
+ $("pz").style.top="24%";const j=await askpz("Solve it to land your hit! The bullets are slowed while you think.\n"+q,o);$("pz").style.top="";
+ A.on=0;A.bl=[];A.sp=1;return j>=0&&o[j]==a&&P.hp>0}
+function tryMove(dx,dy){if(busy)return;face=[dx,dy];const nx=px+dx,ny=py+dy,c=M[ny]?.[nx];if(!c||c=="#")return;
+ if(c>="p"&&c<="v"){puzzle(c.charCodeAt(0)-112);return}if(c>="1"&&c<="7"){boss(+c-1);return}
+ px=nx;py=ny;if(Z[py][px]!=curZ){curZ=Z[py][px];bt=performance.now()}
+ if(c=="H"){P.hp=P.mhp;P.mp=P.mmp;cp=[px,py];hud();save();busy=true;talk(["A Rest Stone hums warmly. Checkpoint set. HP and MP restored. Progress saved."],"Narrator").then(()=>busy=false)}
+}
+// ---- render ----
+function draw(t){const cx=Math.max(0,Math.min(W-VW,px-7)),cy=Math.max(0,Math.min(H-VH,py-5)),g=ctx;
+ for(let r=0;r<VH;r++)for(let c=0;c<VW;c++){const ch=M[cy+r][cx+c],zi=Z[cy+r][cx+c],X=c*T,Y=r*T,h=((cx+c)*7+(cy+r)*13)%5;
+  if(ch=="#"){g.fillStyle="#143021";g.fillRect(X,Y,T,T);g.fillStyle=h<3?"#1d5233":"#236b3e";g.beginPath();g.arc(X+16,Y+13,12,0,7);g.fill();g.fillStyle="#4a2f1a";g.fillRect(X+14,Y+22,4,10)}
+  else if(ch=="g"){g.fillStyle=ZC[zi].g;g.fillRect(X,Y,T,T);g.fillStyle=ZC[zi].b;for(let k=0;k<3;k++)g.fillRect(X+4+((h+k*9)%5)*5,Y+6+k*8,2,7)}
+  else if(ch=="H"){g.fillStyle=ZC[zi].d;g.fillRect(X,Y,T,T);g.fillStyle="#6cf";g.beginPath();g.arc(X+16,Y+16,11+Math.sin(t/300)*1.5,0,7);g.fill();g.fillStyle="#fff";g.fillRect(X+14,Y+8,4,16);g.fillRect(X+8,Y+14,16,4)}
+  else if(ch>="p"&&ch<="v"){g.fillStyle="#103a4a";g.fillRect(X,Y,T,T);g.fillStyle="#4de";g.globalAlpha=.4+.3*Math.sin(t/300+r);g.fillRect(X+3,Y+3,26,26);g.globalAlpha=1;g.fillStyle="#fff";g.font="bold 20px monospace";g.textAlign="center";g.fillText("?",X+16,Y+23)}
+  else if(ch>="1"&&ch<="7"){const B=BO[+ch-1];g.fillStyle="#2a1745";g.fillRect(X,Y,T,T);g.globalAlpha=.5+.3*Math.sin(t/250+c);g.fillStyle="#7a4cc0";g.fillRect(X+4,Y+4,24,24);g.globalAlpha=1;g.fillStyle="#fff";g.font="bold 22px monospace";g.textAlign="center";
+   const near=Math.abs(px-(cx+c))+Math.abs(py-(cy+r))<=5;g.globalAlpha=near?.9:.4;g.fillStyle=near?B.col:"#fff";g.fillText(near?B.sym:"?",X+16,Y+23);g.globalAlpha=1}
+  else{g.fillStyle=ZC[zi].d;g.fillRect(X,Y,T,T);g.fillStyle=ZC[zi].e;g.fillRect(X+h*6,Y+h*5,3,3);
+   BP.forEach(([bx,by],i)=>{if(done[i]&&bx==cx+c&&by==cy+r){g.fillStyle=BO[i].col;g.globalAlpha=.5;g.font="bold 26px monospace";g.textAlign="center";g.fillText(BO[i].sym,X+16,Y+25);g.globalAlpha=1}})}}
+ for(const e of EN){const X=(e.x-cx)*T,Y=(e.y-cy)*T+Math.sin(t/150+e.x)*2;if(X<-T||X>VW*T||Y<-T||Y>VH*T)continue;g.fillStyle="#0006";g.fillRect(X+6,Y+27,20,4);g.shadowColor="#f44";g.shadowBlur=12;g.fillStyle="#c0303a";g.beginPath();g.arc(X+16,Y+15,13,0,7);g.fill();g.shadowBlur=0;g.fillStyle="#fff";g.font="bold 18px monospace";g.textAlign="center";g.fillText(e.d,X+16,Y+21)}
+ const X=(px-cx)*T,Y=(py-cy)*T;g.fillStyle="#0005";g.fillRect(X+7,Y+27,18,4);g.fillStyle="#3d6fd1";g.fillRect(X+9,Y+14,14,12);g.fillStyle="#f2cfa5";g.fillRect(X+9,Y+4,14,11);g.fillStyle="#5a3a1e";g.fillRect(X+8,Y+2,16,5);g.fillStyle="#222";g.fillRect(X+12+face[0]*2,Y+9,2,2);g.fillRect(X+18+face[0]*2,Y+9,2,2);g.fillStyle="#ffd34d";g.fillRect(X+24,Y+13,3,12);if(t-bt<3000){g.globalAlpha=Math.min(1,(3000-(t-bt))/600);g.fillStyle="#000a";g.fillRect(0,8,480,30);g.fillStyle="#fff";g.font="bold 16px monospace";g.textAlign="center";g.fillText(ZN[Z[py][px]],240,29);g.globalAlpha=1}}
+const EN=[];let es=0,eg=0;
+function enemies(t){if(busy)return;
+ if(t-es>2500&&EN.length<3){es=t;for(let k=0;k<40;k++){const x=px+((R()*25|0)-12),y=py+((R()*17|0)-8),c=M[y]?.[x];if(c=="."&&Math.abs(x-px)+Math.abs(y-py)>=8){EN.push({x,y,d:1+(R()*9|0)});break}}}
+ if(t-eg>430){eg=t;for(const e of EN){const dx=Math.sign(px-e.x),dy=Math.sign(py-e.y),o=Math.abs(px-e.x)>=Math.abs(py-e.y)?[[dx,0],[0,dy]]:[[0,dy],[dx,0]];for(const[a,b]of o){if(!a&&!b)continue;const c=M[e.y+b]?.[e.x+a];if(c=="."){e.x+=a;e.y+=b;break}}}}
+ for(let i=EN.length-1;i>=0;i--){const e=EN[i];if(Math.abs(e.x-px)+Math.abs(e.y-py)>26)EN.splice(i,1);else if(Math.abs(e.x-px)+Math.abs(e.y-py)<=1){EN.splice(i,1);wild(e.d);return}}}
+function loop(t){if(held&&t-last>130){last=t;tryMove(...held)}enemies(t);draw(t);requestAnimationFrame(loop)}
+const KM={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
+addEventListener("keydown",e=>{if(e.target.tagName=="INPUT")return;K[e.key]=1;if(e.key==" "||e.key=="Enter"){adv();e.preventDefault();return}const m=KM[e.key];if(m){held=m;e.preventDefault()}});
+addEventListener("keyup",e=>{K[e.key]=0;if(KM[e.key]&&held==KM[e.key])held=null});
+document.querySelectorAll("#dpad button").forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held=b.dataset.d.split(",").map(Number)};b.onpointerup=b.onpointerleave=()=>held=null});
+function save(){if(inBt)return;try{localStorage.setItem("ops2",JSON.stringify({P,px,py,done,BS,cp,solved}))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("ops2"));if(!s||!s.P)return 0;Object.assign(P,s.P);P.mod=0;P.g=0;px=s.px;py=s.py;cp=s.cp||[3,4];curZ=Z[py][px];(s.solved||[]).forEach((d,i)=>{if(d){solved[i]=1;setG(i,".")}});s.done.forEach((d,i)=>{if(d){done[i]=1;setB(i,".")}});(s.BS||[]).forEach((b,i)=>{if(b&&!done[i])BS[i]={...BO[i],...b}});return 1}catch(e){return 0}}
+$("rs").onclick=()=>{const b=$("rs");if(b.dataset.s){try{localStorage.removeItem("ops2")}catch(e){}removeEventListener("pagehide",save);location.reload()}else{b.dataset.s=1;b.textContent="Click again to erase save"}};
+const WD=["PLUS","MINUS","TIMES","DIVIDE","SQUARE","SIGMA","TWINS","RADICAL","FRACTION","PRODUCT"];
+$("rs").onclick=()=>{const w=WD[R()*WD.length|0];$("rw").textContent=`TYPE ${w} to delete progress`;$("ri").value="";$("rm").classList.remove("hide");$("ri").focus();
+ $("rd").onclick=()=>{if($("ri").value.trim().toUpperCase()==w){try{localStorage.removeItem("ops2")}catch(e){}removeEventListener("pagehide",save);location.reload()}else $("rw").textContent=`Wrong word! TYPE ${w} to delete progress`};
+ $("rc").onclick=()=>$("rm").classList.add("hide")};
+const loaded=load();addEventListener("pagehide",save);hud();requestAnimationFrame(loop);
+(loaded?talk(["Progress loaded — welcome back, Counter! Your journey continues."],"Narrator"):talk(["Long ago, the Operators ruled the land of Numbers. Now they guard the path, one after another.","You are a lone Counter, armed with a pencil. Follow the path. Rest at the glowing stones. Rogue digits will hunt you and chase you across the path — fight them to grow stronger.","Move: arrow keys / WASD / on-screen pad. Press Space or tap the text box to continue. In battle, move inside the box to dodge attacks (arrows, WASD, or drag). Something waits in the fog… ?"],"Narrator")).then(()=>busy=false);
+</script></body></html>
